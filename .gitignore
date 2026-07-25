@@ -1,0 +1,24 @@
+# segredos
+.env
+.env.local
+secrets.vault
+*_recovery.txt
+*backup*.txt
+
+# dados/gerados
+*.db
+*.log
+*.csv
+presets/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# SO/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
