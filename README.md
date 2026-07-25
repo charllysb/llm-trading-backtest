@@ -1,62 +1,63 @@
 # LLM Trading Backtest
 
-Backtest de uma estratégia em que **um LLM decide a direção** (long / short /
-fechar / manter) a cada candle, e o **código controla o risco**. Roda sobre
-dados históricos reais da Binance, com taxas reais, e compara o resultado
-contra buy & hold.
+Backtest of a strategy where **an LLM decides the direction** (long / short /
+close / hold) on each candle, and the **code controls the risk**. It runs on real
+Binance historical data, with real fees, and compares the result against buy &
+hold.
 
-> Premissa do projeto: uma estratégia que não bate o buy & hold não presta.
-> O backtest existe para testar essa hipótese com honestidade, não para
-> confirmá-la.
+> Project premise: a strategy that doesn't beat buy & hold is worthless. The
+> backtest exists to test that hypothesis honestly, not to confirm it.
 
-## Como funciona
+## How it works
 
 ```
-ccxt ──► candles históricos (Binance)
+ccxt ──► historical candles (Binance)
    │
    ▼
-indicadores          RSI, EMAs, MACD, ATR calculados por candle
+indicators           RSI, EMAs, MACD, ATR computed per candle
    │
    ▼
-contexto ──► LLM     saída JSON estruturada: LONG / SHORT / CLOSE / HOLD
+context ──► LLM      structured JSON output: LONG / SHORT / CLOSE / HOLD
    │
    ▼
-simulador            1 posição por vez, sem alavancagem, taxa real da Binance
+simulator            1 position at a time, no leverage, real Binance fee
    │
    ▼
-comparação           estratégia  ×  buy & hold
+comparison           strategy  ×  buy & hold
 ```
 
-**Separação de responsabilidades:** o LLM só opina sobre direção. Tamanho de
-posição, limite de exposição e taxas são do código — o modelo nunca controla
-risco.
+**Separation of concerns:** the LLM only opines on direction. Position size,
+exposure limits and fees belong to the code — the model never controls risk.
 
-## Multi-provedor
+## Modes
 
-Funciona com **Anthropic (Claude)** ou qualquer endpoint **compatível com
-OpenAI** — DeepSeek, OpenAI, Groq, OpenRouter, Ollama local. Basta trocar
-`BT_PROVIDER` e `BT_BASE_URL` no `.env`, útil para comparar custo e qualidade
-de decisão entre modelos.
+Set `BT_PROVIDER` in `.env`:
 
-Para provedores compatíveis-OpenAI, o schema de saída vai no prompt; no modo
-Anthropic, usa saída estruturada nativa.
+- **`offline`** — rule-based baseline (EMA + MACD), **no API key needed**. Runs
+  immediately and serves as an honest benchmark.
+- **`anthropic`** — Claude decides (`ANTHROPIC_API_KEY`).
+- **`openai`** — any OpenAI-compatible endpoint: DeepSeek, OpenAI, Groq,
+  OpenRouter, local Ollama (`DEEPSEEK_API_KEY`, etc.).
+
+With no key configured it falls back to `offline` automatically — the project
+always runs. For OpenAI-compatible providers the output schema goes in the prompt;
+in Anthropic mode it uses native structured output.
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
-python backtest_llm.py
+python backtest_llm.py          # runs offline out of the box
 ```
 
-Configurável por `.env`: símbolo, timeframe, número de candles, modelo e
-provedor.
+Configurable via `.env`: symbol, timeframe, number of candles, model and provider.
 
-## Detalhe de implementação
+## Implementation detail
 
-O cliente HTTP é configurado para confiar na **loja de certificados do
-Windows** — o `httpx` usado pelos SDKs ignora o certificado de proxies
-corporativos por padrão, o que quebra as chamadas em rede empresarial.
+The HTTP client is configured to trust the **Windows certificate store** — the
+`httpx` used by the SDKs ignores corporate proxy certificates by default, which
+breaks calls on enterprise networks.
 
 ## Stack
 
